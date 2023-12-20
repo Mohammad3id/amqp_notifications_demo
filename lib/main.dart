@@ -21,12 +21,13 @@ void main() async {
           AndroidFlutterLocalNotificationsPlugin>()
       ?.requestNotificationsPermission();
 
-  final consumer = ReceivePort();
-  Isolate.spawn(listenToQueue, consumer.sendPort);
+  final receivePort = ReceivePort();
+  Isolate.spawn(listenToQueue, receivePort.sendPort);
 
-  runApp(NotificationDemo(consumer: consumer, notifier: localNotifications));
+  runApp(NotificationDemo(receivePort: receivePort));
 }
 
+// Listener Isolate
 void listenToQueue(SendPort sendPort) async {
   final settings = ConnectionSettings(
     host: "164.68.109.159",
@@ -46,11 +47,10 @@ void listenToQueue(SendPort sendPort) async {
 
 
 class NotificationDemo extends StatefulWidget {
-  final ReceivePort consumer;
-  final FlutterLocalNotificationsPlugin notifier;
+  final ReceivePort receivePort;
 
   const NotificationDemo(
-      {super.key, required this.consumer, required this.notifier});
+      {super.key, required this.receivePort});
 
   @override
   State<NotificationDemo> createState() => _NotificationDemoState();
@@ -61,12 +61,13 @@ class _NotificationDemoState extends State<NotificationDemo> {
 
   @override
   void initState() {
-    widget.consumer.listen((message) {
+    widget.receivePort.listen((message) {
       message as String;
       setState(() {
         notifications.add(message);
       });
-      widget.notifier.show(
+
+      FlutterLocalNotificationsPlugin().show(
         Random().nextInt(999999),
         "Demo",
         message,
